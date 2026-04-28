@@ -13,5 +13,6 @@ dist/
 .env
 *.user
 
-**/store/
-**/log/
+# FIX runtime files
+**/fix-store/
+**/fix-logs/

@@ -17,4 +17,16 @@
     <ProjectReference Include="..\OrderAccumulator.Application\OrderAccumulator.Application.csproj" />
     <ProjectReference Include="..\OrderAccumulator.Domain\OrderAccumulator.Domain.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Fix\Config\accumulator.cfg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="FIX44.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

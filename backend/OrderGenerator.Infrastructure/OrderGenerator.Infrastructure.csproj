@@ -11,4 +11,10 @@
     <PackageReference Include="QuickFIXn.FIX44" Version="1.14.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Fix\Config\generator.cfg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  
 </Project>
