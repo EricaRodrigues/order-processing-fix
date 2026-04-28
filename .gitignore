@@ -1,0 +1,17 @@
+# .idea (Rider)
+.idea/
+
+# .NET build output
+**/bin/
+**/obj/
+
+# Node
+node_modules/
+dist/
+
+# User secrets / env
+.env
+*.user
+
+**/store/
+**/log/
