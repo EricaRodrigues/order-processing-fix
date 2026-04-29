@@ -1,10 +1,10 @@
+namespace OrderAccumulator.Worker.Fix;
+
 using OrderAccumulator.Application.Services;
 using OrderAccumulator.Domain.Entities;
 using QuickFix;
 using QuickFix.Fields;
 using QuickFix.FIX44;
-
-namespace OrderAccumulator.Worker.Fix;
 
 public class OrderServer : MessageCracker, IApplication
 {
@@ -22,10 +22,7 @@ public class OrderServer : MessageCracker, IApplication
         => Console.WriteLine($"[FIX] Client disconnected: {sessionId}");
 
     public void FromApp(QuickFix.Message message, SessionID sessionId)
-    {
-        // MessageCracker roteia para o OnMessage correto com base no MsgType
-        Crack(message, sessionId);
-    }
+        => Crack(message, sessionId);
 
     public void OnMessage(NewOrderSingle order, SessionID sessionId)
     {
@@ -45,7 +42,7 @@ public class OrderServer : MessageCracker, IApplication
         SendExecutionReport(sessionId, domainOrder, accepted);
     }
 
-    private void SendExecutionReport(SessionID sessionId, Order order, bool accepted)
+    protected virtual void SendExecutionReport(SessionID sessionId, Order order, bool accepted)
     {
         var report = new ExecutionReport(
             new OrderID(Guid.NewGuid().ToString()),
@@ -60,7 +57,6 @@ public class OrderServer : MessageCracker, IApplication
         );
 
         report.Set(new ClOrdID(order.ClOrdId));
-
         Session.SendToTarget(report, sessionId);
     }
 

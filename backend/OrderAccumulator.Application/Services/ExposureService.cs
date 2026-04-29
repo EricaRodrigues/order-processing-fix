@@ -1,3 +1,5 @@
+using QuickFix.Fields;
+
 namespace OrderAccumulator.Application.Services;
 
 using OrderAccumulator.Domain.Entities;
@@ -15,10 +17,11 @@ public class ExposureService
         {
             var current = _exposures.GetValueOrDefault(order.Symbol, 0m);
 
-            //TODO: Improve 
-            var delta = order.Side == '1'
-                ? order.FinancialValue    // compra aumenta exposição
-                : -order.FinancialValue;  // venda diminui exposição
+            var isBuy = order.Side == Side.BUY;
+            
+            var delta = isBuy
+                ? order.FinancialValue
+                : -order.FinancialValue;
 
             var projected = current + delta;
 

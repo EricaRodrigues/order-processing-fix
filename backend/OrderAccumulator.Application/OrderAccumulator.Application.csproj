@@ -4,6 +4,10 @@
     <ProjectReference Include="..\OrderAccumulator.Domain\OrderAccumulator.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="QuickFIXn.Core" Version="1.14.0" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
