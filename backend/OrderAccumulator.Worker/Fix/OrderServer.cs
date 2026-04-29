@@ -56,6 +56,9 @@ public class OrderServer : MessageCracker, IApplication
             new AvgPx(0)
         );
 
+        if (!accepted)
+            report.Set(new Text("Exposure limit exceeded"));
+        
         report.Set(new ClOrdID(order.ClOrdId));
         Session.SendToTarget(report, sessionId);
     }
