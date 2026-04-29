@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using QuickFix;
 using QuickFix.Fields;
 using QuickFix.FIX44;
@@ -12,9 +13,8 @@ public class OrderClient : MessageCracker, IApplication, IDisposable
     private SocketInitiator? _initiator;
     private SessionID? _sessionId;
 
-    // canal para receber a resposta de forma assíncrona
-    private readonly SemaphoreSlim _responseSemaphore = new(0, 1);
-    private ExecutionReport? _lastReport;
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<ExecutionReport>> _pendingOrders = new();
+    public bool IsConnected => _sessionId is not null;
 
     public void Start(string configPath, string accumulatorHost)
     {
@@ -45,15 +45,14 @@ public class OrderClient : MessageCracker, IApplication, IDisposable
     }
 
     public void FromApp(QuickFix.Message message, SessionID sessionId)
-    {
-        Crack(message, sessionId);
-    }
+        => Crack(message, sessionId);
 
-    // recebe o ExecutionReport do Accumulator
     public void OnMessage(ExecutionReport report, SessionID sessionId)
     {
-        _lastReport = report;
-        _responseSemaphore.Release();
+        var clOrdId = report.ClOrdID.Value;
+        
+        if (_pendingOrders.TryRemove(clOrdId, out var tcs))
+            tcs.SetResult(report);
     }
 
     public async Task<ExecutionReport?> SendOrderAsync(
@@ -63,8 +62,13 @@ public class OrderClient : MessageCracker, IApplication, IDisposable
         if (_sessionId is null)
             throw new InvalidOperationException("FIX session not established.");
 
+        var clOrdId = Guid.NewGuid().ToString();
+        var tcs     = new TaskCompletionSource<ExecutionReport>();
+
+        _pendingOrders[clOrdId] = tcs;
+
         var order = new NewOrderSingle(
-            new ClOrdID(Guid.NewGuid().ToString()),
+            new ClOrdID(clOrdId),
             new Symbol(symbol),
             new Side(side),
             new TransactTime(DateTime.UtcNow),
@@ -76,10 +80,25 @@ public class OrderClient : MessageCracker, IApplication, IDisposable
         order.Set(new TimeInForce(TimeInForce.DAY));
 
         Session.SendToTarget(order, _sessionId);
+        
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(5));
 
-        // aguarda resposta por até 5 segundos
-        var received = await _responseSemaphore.WaitAsync(TimeSpan.FromSeconds(5), ct);
-        return received ? _lastReport : null;
+        try
+        {
+            return await tcs.Task.WaitAsync(timeoutCts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            _pendingOrders.TryRemove(clOrdId, out _);
+            return null;
+        }
+    }
+    
+    public async Task WaitForConnectionAsync(CancellationToken ct = default)
+    {
+        while (!IsConnected && !ct.IsCancellationRequested)
+            await Task.Delay(100, ct);
     }
 
     public void OnCreate(SessionID sessionId) { }

@@ -2,7 +2,7 @@ using QuickFix.Fields;
 
 namespace OrderAccumulator.Application.Services;
 
-using OrderAccumulator.Domain.Entities;
+using Domain.Entities;
 
 public class ExposureService
 {
