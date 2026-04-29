@@ -16,9 +16,15 @@ public class OrderClient : MessageCracker, IApplication, IDisposable
     private readonly SemaphoreSlim _responseSemaphore = new(0, 1);
     private ExecutionReport? _lastReport;
 
-    public void Start(string configPath)
+    public void Start(string configPath, string accumulatorHost)
     {
-        var settings     = new SessionSettings(configPath);
+        var configText = File.ReadAllText(configPath)
+            .Replace("{ACCUMULATOR_HOST}", accumulatorHost);
+
+        var tempPath = Path.Combine(Path.GetTempPath(), "generator_resolved.cfg");
+        File.WriteAllText(tempPath, configText);
+
+        var settings     = new SessionSettings(tempPath);
         var storeFactory = new FileStoreFactory(settings);
         var logFactory   = new FileLogFactory(settings);
 

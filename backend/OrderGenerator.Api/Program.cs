@@ -7,7 +7,8 @@ builder.Services.AddSingleton<OrderClient>(sp =>
 {
     var client = new OrderClient();
     var configPath = Path.Combine(AppContext.BaseDirectory, "Fix", "Config", "generator.cfg");
-    client.Start(configPath);
+    var host = Environment.GetEnvironmentVariable("ACCUMULATOR_HOST") ?? "localhost";
+    client.Start(configPath, host);
     return client;
 });
 

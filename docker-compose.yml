@@ -1,0 +1,52 @@
+services:
+  order-accumulator:
+    build:
+      context: ./backend
+      dockerfile: OrderAccumulator.Worker/Dockerfile
+    container_name: order-accumulator
+    ports:
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_URLS=http://+:5001
+    networks:
+      - fix-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "5001"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  order-generator:
+    build:
+      context: ./backend
+      dockerfile: OrderGenerator.Api/Dockerfile
+    container_name: order-generator
+    ports:
+      - "8080:8080"
+    environment:
+      - ACCUMULATOR_HOST=order-accumulator
+      - ASPNETCORE_URLS=http://+:8080
+    depends_on:
+      order-accumulator:
+        condition: service_healthy
+    networks:
+      - fix-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - order-generator
+    networks:
+      - fix-network
+    restart: unless-stopped
+
+networks:
+  fix-network:
+    driver: bridge
